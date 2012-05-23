@@ -1,3 +1,5 @@
+Written in 2000, looking back from now (2012) looks like I have a few (some perhaps benign) data races.  C++0x atomics would help.
+
 README for GMinehunter, the GNOME Minehunter
 $Id: README,v 2.2 2000/08/11 13:46:41 ckuklewicz Exp $
 
