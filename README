@@ -1,0 +1,291 @@
+README for GMinehunter, the GNOME Minehunter
+$Id: README,v 2.2 2000/08/11 13:46:41 ckuklewicz Exp $
+
+$Log: README,v $
+Revision 2.2  2000/08/11 13:46:41  ckuklewicz
+Fixed alot of user interface policy in the code.
+
+Throttled the deliver of events to the GUI to create a more
+interesting view of game progress.
+
+Changed version number to 0.0.2
+
+
+Author: Chris Kuklewicz <chrisk@mit.edu>
+
+Copyright (c) Chris Kuklewicz 2000 
+
+License: GPL, except for some files that work with libsigc++, namely
+the WrapSlot* SignalBuffer* and DataBuffer* files are LGPL (in case
+libsigc++ maintainers like my ideas).  See COPYING and COPYING.LIB for
+the license text, or http://www.fsf.org for more info.
+
+------------------
+
+I am including a binary of GMinehunter compile on my machine (RH 6.2
+with the helix-code libraries for things like gtkmm).  It has
+libcln.a statically linked in, which brings me to....
+
+Library Dependency:
+
+The Minehunter.cc file uses arbitrary precision integer arithmetic
+to calculate the exact probabilities.  It uses a library called
+cln (GPL'd, which I found by searching the www.fsf.org site).  It
+can be obtained here - http://clisp.cons.org/~haible/packages-cln.html
+(Thank you Bruno Haible <haible@ilog.fr>)
+
+The xpm files:
+
+Stolen, I mean re-used, from the gnomine program in gnome-games.
+Actually I am only using the flag.xpm and mine.xpm at the moment.
+
+Makefile:
+
+As a 1 person project at this point, the makefile is "primitive".
+I wanted to spend time writing C++ code, not learning auto{make,conf}.
+In particular, the path to libcln.a is hard-coded.
+The non-debug compile option is set by default, and it uses
+"-O3 -fno-exception".
+
+For really verbose tracing of what functions are being called,
+comment out the "#define NOT_DEBUGGING 1" in the GMH.hh file.
+I use this to see what slots are getting called with what parameters.
+
+Compiling:
+
+GMH.hh has gnu specific compiler macros, like __PRETTY_FUNCTION__ that
+make tracing my code much more pleasant.  You'll have to edit that
+yourself (I'd take portability patched...).
+
+I am using egcs 2.91.66 (default RH6.2) and the template instantiation
+and linking issues are not pretty.  
+[ Know a good HOWTO? ] 
+Thus Minehunter.cc includes the .cc files of WrapSlot and SignalBuffer
+to side step this issue for now.
+
+The only compiler warning (with -Wall) should be a signed/unsigned
+comparison from the /usr/include/g++-2/stl_deque.h header which is
+not under my control.
+
+-------------------
+
+Running:
+
+As the program runs now, it now gets an 0.0.2 version number.
+
+Game Play : How to operate the program:
+
+The Random seed can be entered by hand, or if zero it will pull a seed
+from the time of day.
+
+The Human button lets you play a normal game.
+
+Left click to select
+Right click to "flag" a location
+You win if you get all the empty locations
+
+The Computer game button lets you watch the algorithm work.  
+
+Black on Yellow locations were guesses, see the text box for
+excruciating details.  The guess is deterministic: it will always
+guess the same location given the same board.
+
+The Assisted game button lets you play the game while the computer
+tries to help.  The algorithm in the background thread flags empty
+squares as green and mines as red.  It only sees what you see, and
+after it makes all the suggestions it can, it guesses and highlights a
+square in yellow.
+
+In theory the computer guess can also choose to guess that a location
+is a mine, and colors it orange.  But usually it guesses that a
+location is empty (yellow).
+
+----------------
+
+Internationalization: None. Nada. Nichts. Nyet.
+
+-----------------------
+
+Documentation:
+
+This REAME && The comments in the code && The code itself &&
+There is doxygen config file, "Doxyfile".  
+
+<plug>
+I am impressed with what it can crank out, especially using gv1.5 to
+create the diagrams.  It can use either Javadoc syntax (which I
+already know) or QT syntax (which I have never used).  It is not
+perfect, and namespaces confuse it, but I like it.
+
+I also ran it on the libsigc++ sources (and gnomemm and gtkmm headers).
+It helps me navigate though it all.
+</plug>
+
+I could not find documentaion code->doc system used by gtk--
+(q.v. irony)
+
+------------------------------
+
+The algorithm the computer uses:
+
+
+At some point, I'll document the algorithm the computer uses to play
+the game.  (The code technically describes it, but not so clearly...)
+
+It will always find a mine or empty square if there is enough
+information to be certain.  (Most) Human players quickly learn how to
+find all the definitely empty or mined locations as well.  The
+computer is only better at this since it never goofs and makes a
+mistake about it.
+
+When there are no definite locations to eliminate as empty or mines,
+and the number of locations it has measured are <=32, it will execute
+the "GreatGuess" routine and recursively count every possible legal
+arrangement of mines.  This lets it calculate accurate probabilities
+before choosing a guess, and this is how it can play much better than
+a human, since a human can only discern rough probabilities. This can
+matter alot, since with 20+ locations, it can happen that one spot has
+an unusually low probability (less than 5%) which is only found by the
+computer.  
+
+Occasionally the algorithm sees that the highest probability is closer
+to 100% than the lowest is close to 0%, so it chooses to guess that
+the highest prob location is a mine.  [The display of this is not
+thoroughly tested in this version]
+
+-------------------------
+
+The motivation and history behind GMinehunter:
+
+1) As a hobby, I created an algorithm to play this sort of mine
+sweeper game as well as possible, given the limited information the
+game gives you.
+
+2) I implemented a console C++ version a few years ago as an excuse
+to learn the STL.  Thus everything that can be pawned off on the
+STL is left to the STL, such as keeping a sorted set and getting
+intersections and differences.  Yes, a singly linked list would be
+faster, but the idea was to use the STL as much as possible. (This
+pertains to the ScanSet class).
+
+All the console version did was create a board and solve it while you
+watched.  The guessing algorithm in this code was not too bright.
+
+3) As an excuse to learn Java, now that 1.2 had the container library,
+I re-implemented the algorithm using very different containers.  The
+STL is optimized to hold instances of objects while JAVA containers
+hold object references, so I used a different system. Still a console
+app.
+
+I added the brute for "find all possible layouts" guessing algorithm
+to the JAVA version.  The speed surprised me, but the scaling is still
+close to exponential. Thus it runs out of steam with too many
+locations to check, and it falls back on approximate methods.
+
+4) As an excuse to learn SWING, I create a pretty GUI for it.  It was
+still only "watch the computer solve it", but learning to use a
+background thread made it almost okay to watch ( there is now Java 1.3
+on Linux which runs it faster, but the release candidate had display
+bugs ).
+
+5) So for a first substantial Linux program to write, I chose to go
+back and create GUI C++ version that let the user play as well.  In the
+same "learn the library, do not re-invent the wheel" approach, I decided
+to go whole hog with glade / gnome-- / libsigc++.
+
+-------------------------------
+
+Below is a verbatim copy of the older readme.  For more info, check
+the libsigc++ mailing list archive on sourceforge.
+
+In particular, there is now a DataBuffer class which I am not
+employing yet, and a G_SignalBuffer_EventSource class that I just
+stated using, which lets a SignalBuffer be a glib main loop event
+source.
+
+=========================================================
+README for WrapSlot.* and SignalBuffer*
+=========================================================
+
+Author: Chris Kuklewicz <chrisk@mit.edu>
+Copyright: Chris Kuklewicz, 2000
+License: Lets say the LGPL (http://www.fsf.org) for these files
+
+Since Andreas Rottmann <a.rottmann@gmx.at> published a beta of the
+thread safe callback system, http://www.8ung.at/rotty/sigc, I am
+publishing my meager version.  It is still being changed a bit every
+few days, and is just supposed to work for me in my personal project.
+Translation: It is not a patch to libsigc++.
+
+All this is happening on the libsigc++:
+ SigC++ Mailing List <libsigc-mlist@lists.sourceforge.net>  
+If you aren't subscribed, go read the archive on sourceforge.
+
+We independently created almost identical class structures.  He was
+more experienced and used pipes, I simply used a guarded deque in
+SafeSignalBuffer.  He implemented synchronous delivery and return
+values, mine always has void return and is asynchronous.  I have not
+tested mine with live threads yet.
+
+I did create something new:
+
+The DataBuffer shows a way of choosing how to coalesce several
+incoming signals so that only one is delivered.
+
+I can also choose whether to delete my events when deliver, or 
+keep them so they can be replayed later.
+
+Sketch of use of API for mine : (sorry no real example code)
+
+void slot_int(int p1) { cout << p1 << endl; };
+
+int main () {
+
+SafeSignalBuffer *buffer = new SafeSignalBuffer(true);
+SafeSignalBuffer *record = new SafeSignalBuffer(false);
+DataBuffer *data = new DataBuffer(REPEAT_LAST);
+Signal1<int> sig_int;
+
+// Like bind, there is now a wrap_slot function:
+
+sig_int.connect(wrap_slot(slot(&slot_int),buffer));
+sig_int.connect(wrap_slot(slot(&slot_int),record));
+sig_int.connect(wrap_slot(slot(&slot_int),data));
+
+// Send 3 events:
+
+sig_int.emit(1);
+sig_int.emit(2);
+sig_int.emit(3);
+
+// Nothing has been printed yet
+
+// Conceptually another thread would run emit() on callEvents:
+
+buffer->callEvents.emit();  // Now 1 2 3 are printed
+buffer->callEvents.emit();  // Nothing is printed
+buffer->callEvents.emit();  // Nothing is printed
+
+record->callEvents.emit();  // Now 1 2 3 are printed
+record->callEvents.emit();  // Now 1 2 3 are printed
+record->callEvents.emit();  // Now 1 2 3 are printed
+
+data->callEvents.emit(); // 3 is printed
+data->callEvents.emit(); // 3 is printed
+data->callEvents.emit(); // 3 is printed
+
+// The callEvents signals can be directly connected:
+
+record->callEvents.connect(data->callEvents.slot());
+
+record->callEvents.emit();  // Now 1 2 3 are printed
+        // And 3 is also printed
+
+// There is also a delete signal to simplify managing memory:
+
+buffer->destroy.connect(DeleteCallback::delete_slot(record));
+buffer->destroy.connect(DeleteCallback::delete_slot(data));
+
+delete buffer; // This deletes record and data as well
+
+} // end of main
